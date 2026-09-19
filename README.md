@@ -85,6 +85,18 @@ The data is ordered by time. The first 80% is used for training and the final 20
 
 The repository reports MAE, RMSE, R², and MAPE. No single metric is treated as universally correct. MAE is easy to communicate, RMSE penalizes large misses, and R² describes explained variance relative to a constant baseline.
 
+## Research extension
+
+The repository also includes a deeper experimental layer in [`RESEARCH_REPORT.md`](RESEARCH_REPORT.md). It adds expanding-window walk-forward evaluation, quantile prediction intervals, feature ablation, and scheduling sensitivity analysis. The current experiments produced 80.8% empirical coverage for a nominal 80% interval with a mean width of 87.4 Wh. Removing historical lag features increased holdout RMSE from 62.0 Wh to 143.2 Wh, while removing weather variables reduced it to 61.0 Wh on this dataset. These findings are reported as empirical observations, not universal claims.
+
+Run the research experiments with:
+
+```bash
+python research_experiment.py
+```
+
+The command regenerates walk-forward, feature-ablation, prediction-interval, and scheduling-sensitivity artifacts.
+
 ### Optimization formulation
 
 Let `x_t` be flexible load scheduled at period `t`, and let `z` represent the resulting peak. The optimizer solves a linear program that minimizes a weighted objective containing the peak variable and normalized price and carbon signals.
