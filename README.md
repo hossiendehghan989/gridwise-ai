@@ -1,46 +1,105 @@
 # GridWise AI
 
-## Forecasting and optimization for smarter energy operations
+## Energy intelligence from forecast to decision
 
-**GridWise AI** is an end-to-end energy intelligence project that forecasts household electricity demand and optimizes flexible load placement. It combines supervised machine learning with constrained linear optimization to demonstrate how an industrial engineer can move from raw operational data to a measurable decision-support solution.
+**GridWise AI** is an end-to-end energy analytics platform that forecasts short-horizon electricity demand and converts the forecast into a constrained operating schedule. It is designed to demonstrate the full workflow expected in applied data science and industrial analytics: data acquisition, leakage-aware feature engineering, chronological validation, model benchmarking, mathematical optimization, visualization, testing, and continuous integration.
 
-The project is designed as a portfolio artifact: it is reproducible, testable, explainable, and deployable as an interactive dashboard.
+The project is intentionally honest about its scope. It uses a public household-energy dataset as a reproducible proxy for industrial telemetry, while the architecture is designed around problems that transfer to buildings, factories, and energy operations.
 
-## Why this project matters
+[![CI](https://github.com/hossiendehghan989/gridwise-ai/actions/workflows/ci.yml/badge.svg)](https://github.com/hossiendehghan989/gridwise-ai/actions/workflows/ci.yml)
+[![Python](https://img.shields.io/badge/Python-3.11%2B-3776AB?logo=python&logoColor=white)](https://www.python.org/)
+[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
-Energy systems do not only need accurate forecasts. They also need decisions that respect operational constraints. GridWise AI addresses both problems in one workflow:
+## Why the project is technically interesting
 
-1. It learns demand patterns from environmental, calendar, and appliance measurements.
-2. It evaluates predictions on a chronological out-of-sample holdout.
-3. It shifts a fixed amount of flexible demand into lower-load periods while respecting a power cap.
-4. It visualizes the forecast and the operational effect of the optimized schedule.
+A demand forecast is not yet an operational solution. An operator also needs to know what action is feasible, what constraints it obeys, and what trade-off it creates. GridWise AI therefore connects two different technical layers:
 
-## Technical highlights
+- **Forecasting:** estimate future appliance demand from environmental, calendar, and historical-demand signals.
+- **Optimization:** schedule a fixed amount of flexible load while respecting a per-period power cap and balancing peak demand with illustrative price and carbon signals.
 
-| Layer | Implementation |
-| --- | --- |
-| **Data** | UCI Appliances Energy Prediction dataset with indoor climate, outdoor weather, lights, and appliance energy measurements. |
-| **Feature engineering** | Calendar variables, weekend flags, and cyclical hour/day-of-week encodings. |
-| **Forecasting** | Histogram Gradient Boosting regression with chronological validation. |
-| **Optimization** | Linear programming with fixed flexible energy, per-period power bounds, and demand-aware scheduling. |
-| **Product layer** | Streamlit dashboard with forecast metrics, time-series visualization, and peak-reduction scenario. |
-| **Quality** | Automated tests for feature construction and schedule feasibility. |
+The design makes the business logic visible. A reviewer can trace each result from the input data to the model metrics and then to the recommended schedule.
+
+## Validated results
+
+The current benchmark uses the final 20% of the chronological dataset as an out-of-sample holdout. No random shuffling is used.
+
+| Model | MAE (Wh) | RMSE (Wh) | R² | MAPE |
+| --- | ---: | ---: | ---: | ---: |
+| Naive: previous reading | 26.5 | 66.2 | 0.46 | 21.9% |
+| **Gradient Boosting** | **29.2** | **62.0** | **0.53** | **26.8%** |
+| Naive: rolling mean | 34.1 | 75.1 | 0.31 | 28.9% |
+| Extra Trees | 39.4 | 67.7 | 0.44 | 40.9% |
+| Naive: same hour yesterday | 61.0 | 118.4 | -0.71 | 61.9% |
+| Random Forest | 63.1 | 96.1 | -0.13 | 69.8% |
+
+The important result is not that one model wins every metric. The benchmark shows that the naive previous-reading baseline has lower MAE, while Gradient Boosting has the best RMSE and R². This is a useful operational finding: model selection depends on whether the business values average absolute error, peak-risk sensitivity, or explained variance.
+
+In the included 12-period scheduling scenario, the optimizer preserves the 1,200 Wh flexible-energy budget and reduces the combined demand peak by 100 Wh under a 300 Wh per-period cap.
 
 ## Architecture
 
 ```text
-UCI energy data
-      │
-      ▼
-Feature engineering ──► Gradient-boosting forecast ──► Out-of-sample metrics
-      │                                                     │
-      └──────────────────────► Linear-program schedule ◄────┘
-                                      │
-                                      ▼
-                              Streamlit decision dashboard
+                     ┌─────────────────────┐
+                     │ UCI energy dataset  │
+                     └──────────┬──────────┘
+                                │
+                                ▼
+                ┌───────────────────────────────┐
+                │ Validation and feature layer  │
+                │ calendar · weather · lags     │
+                └──────────────┬────────────────┘
+                               │
+                               ▼
+             ┌────────────────────────────────────┐
+             │ Chronological model benchmark      │
+             │ naive · gradient boosting · trees  │
+             └──────────────┬─────────────────────┘
+                            │ forecast
+                            ▼
+        ┌────────────────────────────────────────────┐
+        │ Linear-program scheduler                   │
+        │ energy budget · power cap · peak · price   │
+        │ carbon signal                              │
+        └─────────────────┬──────────────────────────┘
+                          │
+                          ▼
+             ┌─────────────────────────────────┐
+             │ Streamlit decision dashboard   │
+             │ metrics · charts · scenario     │
+             └─────────────────────────────────┘
 ```
 
-## Quick start
+## Methodology
+
+### Data and target
+
+The target is `Appliances`, the measured appliance energy consumption in watt-hours. The public UCI dataset contains indoor temperatures, indoor humidity, outdoor weather variables, lighting consumption, and timestamps at ten-minute intervals. The project aggregates no data artificially; it uses the published measurements directly and downloads them through `download_data.py`.
+
+### Feature engineering
+
+The feature layer contains calendar indicators, cyclical encodings for hour and day of week, indoor and outdoor environmental measurements, and historical demand variables. Historical features are shifted before rolling statistics are calculated. This prevents the current target from entering its own predictors.
+
+### Evaluation design
+
+The data is ordered by time. The first 80% is used for training and the final 20% is reserved for evaluation. Every model and baseline is measured on the same holdout. This design is more appropriate for forecasting than a random split because it reflects the direction in which a production system would make predictions.
+
+The repository reports MAE, RMSE, R², and MAPE. No single metric is treated as universally correct. MAE is easy to communicate, RMSE penalizes large misses, and R² describes explained variance relative to a constant baseline.
+
+### Optimization formulation
+
+Let `x_t` be flexible load scheduled at period `t`, and let `z` represent the resulting peak. The optimizer solves a linear program that minimizes a weighted objective containing the peak variable and normalized price and carbon signals.
+
+Subject to:
+
+```text
+0 ≤ x_t ≤ maximum_power_per_period
+Σ x_t = required_flexible_energy
+forecast_demand_t + x_t ≤ z
+```
+
+The formulation guarantees that the flexible-energy budget is conserved. It also exposes the trade-off between peak reduction and lower-cost or lower-carbon periods. The dashboard uses illustrative signals to make the trade-off visible; a production deployment would replace them with live tariffs and grid-intensity data.
+
+## Run locally
 
 ```bash
 git clone https://github.com/hossiendehghan989/gridwise-ai.git
@@ -50,45 +109,41 @@ source .venv/bin/activate
 pip install -r requirements.txt
 python download_data.py
 pytest -q
+python validate.py
 streamlit run dashboard.py
 ```
 
-The dashboard opens locally and reports mean absolute error, root mean squared error, R², forecast behavior, baseline peak demand, optimized peak demand, and the amount of flexible energy shifted.
-
-On the downloaded UCI holdout, the current model reached **30.5 Wh MAE**, **62.8 Wh RMSE**, and **0.52 R²**. In the included 12-period scenario, the optimizer reduced the combined demand peak by **100 Wh** while preserving the flexible-energy budget.
-
-## Reproducibility
-
-The repository does not commit the downloaded dataset. Running `download_data.py` retrieves the public dataset from the UCI Machine Learning Repository and extracts it into `data/`. The training procedure uses a chronological split rather than a random split to avoid leaking future information into the past.
-
-## Resume-ready impact statement
-
-> Built **GridWise AI**, an end-to-end energy intelligence platform that combines chronological demand forecasting with constrained linear-program optimization; delivered a tested Streamlit dashboard that translates model output into peak-reduction decisions.
+The dashboard displays the model benchmark, out-of-sample actual-versus-forecast behavior, and an interactive scheduling scenario. The `validate.py` script prints the benchmark table and verifies that the optimized energy budget is conserved.
 
 ## Project structure
 
 ```text
 .
-├── dashboard.py
-├── download_data.py
+├── .github/workflows/ci.yml       # automated tests on push and pull request
+├── dashboard.py                   # Streamlit decision interface
+├── download_data.py               # reproducible public-data download
+├── validate.py                    # benchmark and optimization validation
 ├── requirements.txt
-├── src/
-│   └── energy_optimizer.py
-├── tests/
-│   └── test_energy_optimizer.py
-└── data/                 # downloaded locally, not committed
+├── src/energy_optimizer.py        # features, models, metrics, optimizer
+├── tests/test_energy_optimizer.py
+├── LICENSE
+└── data/                          # local downloaded data, ignored by Git
 ```
 
-## Limitations and next steps
+## Resume-ready description
 
-This first version uses a public household-energy dataset rather than live industrial telemetry. A production version would add a proper data-ingestion layer, probabilistic forecasts, electricity-price and carbon-intensity feeds, equipment constraints, model monitoring, and a database-backed API.
+> Built **GridWise AI**, an end-to-end energy intelligence platform that benchmarks leakage-aware demand forecasts on a chronological holdout and converts predictions into a constrained linear-program schedule. Implemented Python, scikit-learn, SciPy, Streamlit, automated tests, and GitHub Actions; achieved 62.0 Wh RMSE and 0.53 R² with Gradient Boosting while preserving a fixed flexible-energy budget.
 
-## License
+## Honest limitations and next steps
 
-MIT License. See `LICENSE` for details.
+This repository is a serious portfolio implementation, not a claim of production readiness. The dataset represents a home rather than a factory, and the price and carbon vectors in the dashboard are illustrative. A production extension would add real tariff and carbon feeds, equipment-level constraints, probabilistic prediction intervals, a model registry, drift monitoring, an API, database persistence, and deployment infrastructure.
 
 ## Data source
 
 [1]: https://archive.ics.uci.edu/dataset/374/appliances+energy+prediction "UCI Appliances Energy Prediction dataset"
 
-The dataset is provided by the UCI Machine Learning Repository [1].
+The data is provided by the UCI Machine Learning Repository [1].
+
+## License
+
+MIT License. See [LICENSE](LICENSE).
