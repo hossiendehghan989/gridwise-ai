@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 
-from src.advanced import economic_summary, robust_schedule, validate_dataset
+from src.advanced import annualized_roi, economic_summary, retraining_decision, robust_schedule, validate_dataset
 
 
 def test_data_quality_report_passes_for_clean_data():
@@ -22,3 +22,12 @@ def test_economic_summary_returns_savings_fields():
     result = economic_summary(np.array([100, 200]), np.array([150, 150]), np.array([1.0, 2.0]))
     assert "total_estimated_saving" in result
     assert result["optimized_peak_charge"] < result["baseline_peak_charge"]
+
+
+def test_roi_and_retraining_policy_are_deterministic():
+    roi = annualized_roi(12000, 20000, 2000)
+    assert roi["net_annual_saving"] == 10000
+    assert roi["simple_payback_years"] == 2
+    decision = retraining_decision(140, 100, 0.05)
+    assert decision["retrain"] is True
+    assert decision["error_trigger"] is True

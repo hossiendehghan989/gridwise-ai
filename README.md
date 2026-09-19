@@ -171,3 +171,9 @@ The research version now includes a lightweight service and operational safeguar
 - `PRODUCTION_GUIDE.md` documents deployment assumptions and the safeguards still required before connecting to physical equipment.
 
 The robust scheduler chooses a single schedule against multiple demand scenarios. This is stronger than optimizing each scenario separately, but it remains a scenario-based approximation rather than a full distributionally robust or mixed-integer industrial optimizer.
+
+## Complete technical question coverage
+
+The repository now implements the four previously incomplete areas: split-conformal calibration, annualized ROI and payback, configurable API-key protection, and a deterministic retraining policy based on forecast degradation or feature drift. The implementation-to-question mapping is documented in [`INTERVIEW_ANSWERS.md`](INTERVIEW_ANSWERS.md).
+
+The conformal experiment writes `artifacts/conformal_intervals.csv` and reports test coverage after chronological calibration. The API accepts `GRIDWISE_API_KEY`; when configured, `/quality` and `/forecast` require the `X-API-Key` header. These mechanisms improve defensibility, but they do not replace security review or production monitoring.

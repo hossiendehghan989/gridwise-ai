@@ -145,3 +145,49 @@ def economic_summary(baseline_load: np.ndarray, optimized_load: np.ndarray, pric
         "optimized_peak_charge": optimized_peak_cost,
         "total_estimated_saving": (baseline_energy_cost + baseline_peak_cost) - (optimized_energy_cost + optimized_peak_cost),
     }
+
+
+def annualized_roi(annual_saving: float, implementation_cost: float, annual_operating_cost: float = 0.0) -> dict[str, float]:
+    """Return transparent first-year ROI and payback period."""
+    if implementation_cost <= 0:
+        raise ValueError("implementation_cost must be positive")
+    net_annual = float(annual_saving - annual_operating_cost)
+    return {
+        "net_annual_saving": net_annual,
+        "first_year_roi_pct": float((net_annual - implementation_cost) / implementation_cost * 100),
+        "simple_payback_years": float(implementation_cost / net_annual) if net_annual > 0 else float("inf"),
+    }
+
+
+def conformal_interval(df: pd.DataFrame, coverage: float = 0.9) -> pd.DataFrame:
+    """Construct a split-conformal interval from a chronological calibration set."""
+    if not 0 < coverage < 1:
+        raise ValueError("coverage must be between 0 and 1")
+    X, y, _ = build_features(df)
+    n = len(X)
+    train_end = int(n * 0.6)
+    calibration_end = int(n * 0.8)
+    from sklearn.ensemble import HistGradientBoostingRegressor
+    model = HistGradientBoostingRegressor(max_iter=300, learning_rate=0.055, max_leaf_nodes=31, random_state=42)
+    model.fit(X.iloc[:train_end], y.iloc[:train_end])
+    calibration_pred = model.predict(X.iloc[train_end:calibration_end])
+    scores = np.abs(y.iloc[train_end:calibration_end].to_numpy() - calibration_pred)
+    quantile = float(np.quantile(scores, np.ceil((len(scores) + 1) * coverage) / len(scores), method="higher"))
+    test_pred = model.predict(X.iloc[calibration_end:])
+    dates = df.loc[X.index, "date"].iloc[calibration_end:]
+    frame = pd.DataFrame({"timestamp": dates, "actual": y.iloc[calibration_end:].to_numpy(), "forecast": test_pred})
+    frame["lower"] = np.maximum(0, frame["forecast"] - quantile)
+    frame["upper"] = frame["forecast"] + quantile
+    frame["covered"] = frame["actual"].between(frame["lower"], frame["upper"])
+    frame.attrs["coverage_target"] = coverage
+    frame.attrs["radius_wh"] = quantile
+    return frame
+
+
+def retraining_decision(current_mae: float, baseline_mae: float, drift_score: float, mae_threshold: float = 1.25, drift_threshold: float = 0.2) -> dict[str, bool | str]:
+    """Deterministic policy for triggering model review or retraining."""
+    error_trigger = current_mae > baseline_mae * mae_threshold
+    drift_trigger = drift_score >= drift_threshold
+    retrain = error_trigger or drift_trigger
+    reason = "; ".join(filter(None, ["forecast error degraded" if error_trigger else "", "feature drift exceeded threshold" if drift_trigger else ""]))
+    return {"retrain": retrain, "error_trigger": error_trigger, "drift_trigger": drift_trigger, "reason": reason or "no trigger"}
