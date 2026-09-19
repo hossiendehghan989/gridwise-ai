@@ -159,3 +159,15 @@ The data is provided by the UCI Machine Learning Repository [1].
 ## License
 
 MIT License. See [LICENSE](LICENSE).
+
+## Production-oriented extensions
+
+The research version now includes a lightweight service and operational safeguards:
+
+- `api.py` exposes health, data-quality, and multi-horizon forecast endpoints through FastAPI.
+- `src/advanced.py` adds dataset validation, quantile-style multi-horizon intervals, permutation importance, scenario-based robust scheduling, and an economic summary.
+- `Dockerfile` and `docker-compose.yml` provide a reproducible container entry point.
+- `api_smoke.py` verifies the service surface end to end.
+- `PRODUCTION_GUIDE.md` documents deployment assumptions and the safeguards still required before connecting to physical equipment.
+
+The robust scheduler chooses a single schedule against multiple demand scenarios. This is stronger than optimizing each scenario separately, but it remains a scenario-based approximation rather than a full distributionally robust or mixed-integer industrial optimizer.

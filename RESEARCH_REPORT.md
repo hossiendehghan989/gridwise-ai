@@ -149,3 +149,25 @@ The next scientifically meaningful extensions are conformal prediction for finit
 ## References
 
 [1]: https://archive.ics.uci.edu/dataset/374/appliances+energy+prediction "UCI Appliances Energy Prediction dataset"
+
+## 14. Robust decision extension
+
+The deterministic scheduler assumes a single demand vector. The production-oriented extension instead accepts a matrix of demand scenarios and selects one shared flexible-load schedule. Scenario-specific peak variables are constrained by a common worst-case auxiliary variable. This reflects a two-stage decision structure: the schedule is selected before the realized demand scenario is known.
+
+The robust formulation is not automatically optimal under every uncertainty model. Its meaning depends on how scenarios are generated. If the scenarios are arbitrary or uncalibrated, the robust schedule may be unnecessarily conservative. A stronger study would generate scenarios from calibrated predictive distributions and evaluate out-of-sample service levels, expected cost, worst-case cost, and constraint violation probability.
+
+## 15. Multi-horizon forecasting and API boundary
+
+The service exposes a horizon parameter between one and 168 periods. The current extension uses a transparent recursive baseline around the latest observed demand and recent seasonal level, with residual-derived intervals. This is intentionally not presented as a state-of-the-art multi-step model. Its purpose is to establish a clean service boundary and an uncertainty-aware contract that can later be replaced by a direct multi-output model or a probabilistic sequence model.
+
+A defensible production replacement would compare direct and recursive strategies, evaluate horizon-specific error, calibrate intervals independently by horizon, and version the model together with the feature schema.
+
+## 16. Data and model governance
+
+The API includes a lightweight data-quality report. It checks required fields, missing cells, duplicate timestamps, negative targets, and monotonic time. These checks prevent several silent failures, but they do not establish sensor validity. Production governance requires sensor-level bounds, freshness thresholds, schema versioning, lineage, immutable raw data, model artifacts with provenance, and a quarantine path for invalid batches.
+
+The service also exposes permutation importance as a diagnostic. This is an intentionally modest explainability method. It measures predictive dependence under the holdout distribution and must not be described as a causal explanation. For high-stakes operational decisions, explanations should be accompanied by counterfactual tests, stability analysis, and domain review.
+
+## 17. Reproducible service test
+
+The `api_smoke.py` script validates the health, quality, and forecast endpoints. The test confirms that the API returns structured output and the requested horizon. It does not constitute a security assessment. Before public deployment, authentication, rate limiting, structured logging, request tracing, dependency pinning, and vulnerability scanning are required.
