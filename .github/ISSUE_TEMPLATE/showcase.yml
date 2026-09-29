@@ -1,0 +1,37 @@
+name: Share a scenario
+description: Share a dataset, use case, or experiment that could inform GridWise AI
+title: "Showcase: "
+labels: [question, showcase]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for sharing a scenario. Please do not include confidential operational data.
+  - type: textarea
+    id: context
+    attributes:
+      label: Domain context
+      description: What energy, building, industrial, or research setting are you working with?
+    validations:
+      required: true
+  - type: textarea
+    id: data_contract
+    attributes:
+      label: Data shape
+      description: Describe timestamps, target units, forecast horizon, and available signals without sharing sensitive data.
+    validations:
+      required: true
+  - type: textarea
+    id: decision
+    attributes:
+      label: Decision to optimize
+      description: What action, constraint, or operational outcome should the system support?
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Reproducible example or references
+      description: Add a public dataset, pseudocode, paper, or small synthetic example if available.
+    validations:
+      required: false

@@ -1,0 +1,23 @@
+cff-version: 1.2.0
+title: "GridWise AI"
+message: "If GridWise AI supports your research or technical work, please cite this repository."
+type: software
+authors:
+  - family-names: Dehghan
+    given-names: Hossein
+repository-code: "https://github.com/hossiendehghan989/gridwise-ai"
+url: "https://github.com/hossiendehghan989/gridwise-ai"
+license: MIT
+version: 0.1.0
+date-released: 2026-09-29
+abstract: >-
+  An end-to-end energy decision-support research prototype that connects
+  leakage-aware time-series forecasting to constrained flexible-load scheduling,
+  with Streamlit, FastAPI, Docker, tests, and reproducible evaluation.
+keywords:
+  - energy forecasting
+  - constrained optimization
+  - time series
+  - decision support
+  - industrial analytics
+  - machine learning

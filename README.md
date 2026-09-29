@@ -15,6 +15,17 @@ The project is built for people who want to inspect the full path from **data �
 
 > **Scope note:** this repository is a serious research prototype, not a claim of production readiness. Tariffs, carbon signals, and equipment constraints are illustrative and must be replaced and validated before operational use.
 
+## Join the build
+
+This project is intentionally open to technical feedback. The fastest ways to participate are:
+
+- **Choose the next signal:** comment on [Issue #1](https://github.com/hossiendehghan989/gridwise-ai/issues/1) and vote with a concrete use case for tariffs, carbon intensity, or equipment constraints.
+- **Share your scenario:** open a [Showcase issue](https://github.com/hossiendehghan989/gridwise-ai/issues/new?template=showcase.yml) with your dataset shape, planning horizon, and what you would optimize.
+- **Improve reproducibility:** use the [feature request form](https://github.com/hossiendehghan989/gridwise-ai/issues/new?template=feature_request.yml) or submit a focused pull request using the repository checklist.
+- **Cite or reuse the research prototype:** see [`CITATION.cff`](CITATION.cff) and the [v0.1.0 release](https://github.com/hossiendehghan989/gridwise-ai/releases/tag/v0.1.0).
+
+Good discussions are more valuable here than generic stars: include a domain, data contract, metric, or reproducible example whenever possible.
+
 ## Why it is different
 
 Most forecasting projects stop at *“what will demand be?”* GridWise asks the next operational question:
