@@ -1,0 +1,25 @@
+name: Feature request
+description: Suggest an improvement to the research prototype
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What user or energy-domain problem would this solve?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed approach
+      description: What would you like GridWise AI to do?
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence or example
+      description: Add data, an example workflow, or a reference implementation if available.
+    validations:
+      required: false
