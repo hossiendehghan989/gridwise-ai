@@ -4,7 +4,6 @@ import numpy as np
 
 from src.energy_optimizer import benchmark_models, load_dataset, optimize_schedule
 
-
 df = load_dataset(Path("data/energydata_complete.csv"))
 benchmark, result = benchmark_models(df)
 forecast = result.predictions.tail(12).to_numpy()

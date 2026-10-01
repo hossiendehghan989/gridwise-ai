@@ -7,7 +7,6 @@ import numpy as np
 import pandas as pd
 from scipy.optimize import linprog
 from sklearn.inspection import permutation_importance
-from sklearn.metrics import mean_absolute_error
 
 from .energy_optimizer import build_features, train_forecaster
 

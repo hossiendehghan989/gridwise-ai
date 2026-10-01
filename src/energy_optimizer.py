@@ -1,9 +1,9 @@
 """GridWise AI: forecasting benchmarks and constrained energy scheduling."""
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Callable
 
 import numpy as np
 import pandas as pd
@@ -55,7 +55,7 @@ def build_features(df: pd.DataFrame) -> tuple[pd.DataFrame, pd.Series, list[str]
         "hour", "day_of_week", "month", "is_weekend", "hour_sin", "hour_cos",
         "dow_sin", "dow_cos", "appliances_lag_1", "appliances_lag_24", "appliances_roll_6",
     ]
-    data = data.dropna(subset=features + ["Appliances"])
+    data = data.dropna(subset=[*features, "Appliances"])
     return data[features], data["Appliances"], features
 
 
@@ -88,7 +88,7 @@ def train_forecaster(df: pd.DataFrame, test_fraction: float = 0.2) -> ForecastRe
 
 def benchmark_models(df: pd.DataFrame, test_fraction: float = 0.2) -> tuple[pd.DataFrame, ForecastResult]:
     """Compare naive baselines and tree models on exactly the same time holdout."""
-    X, y, features = build_features(df)
+    X, y, _features = build_features(df)
     split = int(len(X) * (1 - test_fraction))
     dates = df.loc[X.index, "date"]
     actual = y.iloc[split:].copy()
